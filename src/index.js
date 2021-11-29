@@ -5,13 +5,13 @@ import { loadGraphModel } from '@tensorflow/tfjs-converter';
 import "./styles.css";
 tf.setBackend('webgl');
 
-const threshold = 0.75;
+const threshold = 0.7;
 
 async function load_model() {
   // It's possible to load the model locally or from a repo
   // You can choose whatever IP and PORT you want in the "http://127.0.0.1:8080/model.json" just set it before in your https server
-  //const model = await loadGraphModel("http://127.0.0.1:8080/model.json");
-  const model = await loadGraphModel("https://raw.githubusercontent.com/trangml/futureHAUS-TFJS-object-detection/master/models/tf2_web_model/model.json");
+  const model = await loadGraphModel("http://127.0.0.1:8080/model.json");
+  //const model = await loadGraphModel("https://raw.githubusercontent.com/trangml/futureHAUS-TFJS-object-detection/master/models/tf2_web_model/model.json");
   return model;
 }
 
@@ -21,8 +21,16 @@ let classesDir = {
     id: 1,
   },
   2: {
-    name: 'Other',
+    name: 'Charge Controller',
     id: 2,
+  },
+  3: {
+    name: 'Battery',
+    id: 3,
+  },
+  4: {
+    name: 'Other',
+    id: 4,
   }
 }
 
@@ -107,7 +115,7 @@ class App extends React.Component {
     const detectionObjects = []
     var video_frame = document.getElementById('frame');
     scores[0].forEach((score, i) => {
-      if (score[1] > threshold) {
+      if (score > threshold) {
         const bbox = [];
         const minY = boxes[0][i][0] * video_frame.offsetHeight;
         const minX = boxes[0][i][1] * video_frame.offsetWidth;
@@ -120,7 +128,7 @@ class App extends React.Component {
         detectionObjects.push({
           class: classes[i],
           label: classesDir[classes[i]].name,
-          score: score[1].toFixed(4),
+          score: score.toFixed(4),
           bbox: bbox
         })
       }
@@ -147,9 +155,28 @@ class App extends React.Component {
     // boxes, classes, classesDir);
 
     // These indexes work for the tf2 model converted using tfjs_wiz 3.9
-    const boxes = predictions[7].arraySync();
-    const scores = predictions[2].arraySync();
-    const classes = predictions[6].dataSync();
+    // const boxes = predictions[7].arraySync(); // name "detection_boxes"
+    // const scores = predictions[2].arraySync(); // name "detection_multiclass_scores"
+    // const classes = predictions[6].dataSync(); // name "Identity_2:0", shape "tensorShape": { "dim": [{ "size": "1" }, { "size": "100" }] }
+    // const detections = this.buildDetectedObjects(scores, threshold,
+    // boxes, classes, classesDir);
+
+    // These indexes work for the inverter_long_web model
+    // const boxes = predictions[7].arraySync(); // name "detection_boxes"
+    // const scores = predictions[6].arraySync(); // name "detection_multiclass_scores"
+    // const classes = predictions[3].dataSync(); // name "Identity_2:0", shape "tensorShape": { "dim": [{ "size": "1" }, { "size": "100" }] }
+    const p0 = predictions[0].arraySync(); // name "detection_boxes"
+    const p1 = predictions[1].arraySync(); // name "detection_boxes"
+    const p2 = predictions[2].arraySync(); // name "detection_boxes"
+    const p3 = predictions[3].arraySync(); // name "detection_boxes"
+    const p4 = predictions[4].arraySync(); // name "detection_boxes"
+    const p5 = predictions[5].arraySync(); // name "detection_boxes"
+    const p6 = predictions[6].arraySync(); // name "detection_multiclass_scores"
+    const p7 = predictions[7].arraySync(); // name "detection_multiclass_scores"
+    // These indexes work for the web model trained locally using resnet50
+    const boxes = predictions[0].arraySync(); // name "detection_boxes"
+    const scores = predictions[7].arraySync(); // name "detection_multiclass_scores"
+    const classes = predictions[5].dataSync(); // name "Identity_2:0", shape "tensorShape": { "dim": [{ "size": "1" }, { "size": "100" }] }
     const detections = this.buildDetectedObjects(scores, threshold,
       boxes, classes, classesDir);
 
